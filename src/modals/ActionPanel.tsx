@@ -14,6 +14,7 @@ import volumioIcon from '../assets/volumio-icon.png';
 import ContextualModal, { ContextualModalProps } from '../common/ContextualModal';
 import { usePerformanceContext, useSettings } from '../contexts/SettingsProvider';
 import { CommonSettingsCategory } from 'now-playing-common';
+import { useSocket } from '../contexts/SocketProvider';
 
 export interface ActionPanelProps extends ContextualModalProps {
   closePanel: () => void;
@@ -26,6 +27,7 @@ function ActionPanel(props: ActionPanelProps) {
   const { switchScreen } = useScreens();
   const overlayEl = useRef<HTMLDivElement | null>(null);
   const { closePanel } = props;
+  const { socket } = useSocket();
 
   const modalOverlayClassNames = {
     base: styles.Overlay,
@@ -70,10 +72,16 @@ function ActionPanel(props: ActionPanelProps) {
     swipeHandler.ref(overlayEl.current);
   };
 
-  // Handlers for extra buttons
-  const refresh = useCallback(() => {
-    window.location.reload();
-  }, []);
+  const shuffle = useCallback(() => {
+    if (socket) {
+      const endPoint = {
+        type: 'plugin',
+        endpoint: 'user_interface/randomizer',
+        method: 'randomTracks'
+      };
+      socket.emit('callMethod', endPoint);
+    }
+  }, [ socket ]);
 
   const switchToVolumio = useCallback(() => {
     switchScreen({
@@ -105,8 +113,8 @@ function ActionPanel(props: ActionPanelProps) {
         <div className={styles.Layout__extraButtonsWrapper}>
           <Button
             styles={extraButtonStyles}
-            icon="refresh"
-            onClick={refresh} />
+            icon="shuffle"
+            onClick={shuffle} />
           <Button
             styles={extraButtonStyles}
             image={volumioIcon}
